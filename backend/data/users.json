@@ -1,0 +1,69 @@
+{
+  "users": [
+    {
+      "username": "abc",
+      "password": "abc",
+      "devices": [
+        {
+          "name": "Etage 1",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le!"
+        },
+        {
+          "name": "Etage 2",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le!"
+        },
+        {
+          "name": "192.168.10.12",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le"
+        },
+        {
+          "name": "a",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le!"
+        },
+        {
+          "name": "a",
+          "ip": "a",
+          "user": "a",
+          "pass": "a"
+        },
+        {
+          "name": "Etage 1",
+          "ip": "192.168.10.12",
+          "user": "admin ",
+          "pass": "EneriaC0ntr0le!"
+        },
+        {
+          "name": "EEE",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le!"
+        },
+        {
+          "name": "a",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le!"
+        },
+        {
+          "name": "a",
+          "ip": "192.168.10.12",
+          "user": "admin",
+          "pass": "EneriaC0ntr0le!"
+        }
+      ]
+    },
+    {
+      "username": "office@example.com",
+      "password": "secret",
+      "devices": []
+    }
+  ]
+}
