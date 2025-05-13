@@ -133,7 +133,27 @@ def add_token_to_url(url, token):
     new_query = urlencode(qs, doseq=True)
     return urlunparse(parsed._replace(query=new_query))
 
-@app.route("/proxy/<ip>/<path:subpath>")
+# Add this new route to handle direct redirection with token
+@app.route("/proxy/<ip>/sdcard/cpt/app/grdata.php")
+def grdata_redirect(ip):
+    # Get most recent token if available
+    if device_sessions:
+        # Use the most recently created token
+        token = list(device_sessions.keys())[-1]
+        # Reconstruct the URL with the token
+        query_string = request.query_string.decode('utf-8')
+        if query_string:
+            new_url = f"/proxy/{ip}/sdcard/cpt/app/grdata.php?{query_string}&token={token}"
+        else:
+            new_url = f"/proxy/{ip}/sdcard/cpt/app/grdata.php?token={token}"
+        
+        # Redirect to the same URL but with token
+        print(f"🔄 Redirecting to grdata.php with token: {new_url}")
+        return f'<script>window.location.href = "{new_url}";</script>'
+    
+    return "No active sessions available", 403
+
+@app.route("/proxy/<ip>/<path:subpath>", methods=["GET", "POST"])
 def proxy(ip, subpath):
     token = request.args.get("token")
     target_url = f"http://{ip}/{subpath}"
@@ -142,6 +162,12 @@ def proxy(ip, subpath):
     print("➡️ Token:", token)
     print("➡️ Available sessions:", list(device_sessions.keys()))
 
+    # Special handling for grdata.php requests (ensure they always have a token)
+    if "grdata.php" in subpath and not token and device_sessions:
+        # Use the most recently created token
+        token = list(device_sessions.keys())[-1]
+        print(f"🔍 Auto-adding token {token} to grdata.php request")
+    
     # 1. Serve static files (no session needed)
     if is_safe_static_file(subpath):
         try:
@@ -154,8 +180,18 @@ def proxy(ip, subpath):
 
     # 2. Validate token/session
     if not token or token not in device_sessions:
-        print("⚠️ Session not found. Attempting auto-login...")
-        return "Missing or invalid token", 403
+        if "grdata.php" in subpath:
+            print("⚠️ Missing token for grdata.php request. Checking for any active sessions...")
+            if device_sessions:
+                # Use the most recently created token
+                token = list(device_sessions.keys())[-1]
+                print(f"✅ Using existing session token: {token}")
+            else:
+                print("⚠️ No active sessions found. Login required.")
+                return "Login required. No active sessions.", 403
+        else:
+            print("⚠️ Session not found. Attempting auto-login...")
+            return "Missing or invalid token", 403
 
     session = device_sessions[token]["session"]
 
@@ -213,9 +249,38 @@ def proxy(ip, subpath):
                     print("📄 JS patched:")
                     print(new[:300])  # show preview
 
+            # 5. Add auto-inject script that will add tokens to AJAX requests
+            token_script = soup.new_tag("script")
+            token_script.string = f"""
+            // Auto-inject token for AJAX requests to grdata.php
+            (function() {{
+                var originalOpen = XMLHttpRequest.prototype.open;
+                XMLHttpRequest.prototype.open = function() {{
+                    originalOpen.apply(this, arguments);
+                    var url = arguments[1];
+                    if (url && url.includes('grdata.php') && !url.includes('token=')) {{
+                        // Add token to URL
+                        var separator = url.includes('?') ? '&' : '?';
+                        this._tokenUrl = url + separator + 'token={token}';
+                        var self = this;
+                        this.addEventListener('readystatechange', function() {{
+                            if (self.readyState === 1) {{
+                                if (self._tokenUrl) {{
+                                    self.abort();
+                                    originalOpen.call(self, arguments[0], self._tokenUrl, arguments[2], arguments[3], arguments[4]);
+                                    delete self._tokenUrl;
+                                }}
+                            }}
+                        }}, false);
+                    }}
+                }};
+            }})();
+            """
+            soup.head.append(token_script)
+
             return Response(str(soup), status=resp.status_code, content_type=content_type)
 
-        # 5. Other content (JSON, XML, etc.)
+        # 6. Other content (JSON, XML, etc.)
         excluded_headers = ["content-encoding", "content-length", "transfer-encoding", "connection"]
         headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
         return Response(resp.content, status=resp.status_code, headers=headers)
