@@ -25,10 +25,10 @@ def get_devices_for_user(username):
     return []
 
 
-def add_device_to_user(email, device):
+def add_device_to_user(username, device):
     data = load_data()
     for user in data["users"]:
-        if user["email"] == email:
+        if user["username"] == username:
             if "devices" not in user:
                 user["devices"] = []
             user["devices"].append(device)
