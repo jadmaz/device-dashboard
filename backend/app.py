@@ -1,147 +1,138 @@
-from flask import Flask, request, jsonify, make_response, Response
-import requests
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-import uuid
-from bs4 import BeautifulSoup
-from auth import check_credentials
-from devices import get_devices_for_user, add_device_to_user
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
-import time
-import hashlib
+from devices import get_devices as load_devices
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import WebDriverException
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 CORS(app)
+chrome_driver = None
 
-device_sessions = {}
-DEBUG_MODE = True  # Add this to control debug output
+# Load environment variables
+load_dotenv()
 
-def sha256(data):
-    return hashlib.sha256(data.encode('utf-8')).hexdigest()
-
-@app.route("/api/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-    if check_credentials(username, password):
-        return jsonify({"success": True})
-    return jsonify({"success": False, "error": "Invalid credentials"}), 401
+# Get credentials from environment
+DEVICE_USERNAME = os.getenv('DEVICE_USERNAME')
+DEVICE_PASSWORD = os.getenv('DEVICE_PASSWORD')
 
 @app.route("/api/devices", methods=["POST"])
-def get_devices():
-    data = request.get_json()
-    username = data.get("username")
-    devices = get_devices_for_user(username)
+def get_devices_route():  # Changed function name
+    devices = load_devices()  # Using the imported function
     return jsonify({"devices": devices})
 
-@app.route("/api/add-device", methods=["POST"])
-def add_device():
-    data = request.get_json()
-    username = data.get("username")
-    device = data.get("device")
-    success = add_device_to_user(username, device)
-    return jsonify({"success": success})
+def setup_chrome_driver():
+    """Initialize or reset Chrome WebDriver with required options"""
+    global chrome_driver
+    
+    chrome_options = ChromeOptions()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_experimental_option("detach", True)
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+    
+    chrome_service = ChromeService()
+    chrome_driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+
+def handle_login(username, password):
+    """Handle login form submission"""
+    wait = WebDriverWait(chrome_driver, 10)
+    
+    userfield = wait.until(EC.element_to_be_clickable((By.NAME, "user[name]")))
+    passfield = wait.until(EC.element_to_be_clickable((By.NAME, "user[password]")))
+    submit_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit']")))
+    
+    userfield.clear()
+    userfield.send_keys(username)
+    passfield.clear()
+    passfield.send_keys(password)
+    submit_btn.click()
+
+def is_browser_alive():
+    """Check if browser is still responsive"""
+    try:
+        if chrome_driver:
+            chrome_driver.current_window_handle
+            return True
+    except:
+        return False
+    return False
+
+def ensure_browser():
+    """Ensure we have a working browser instance"""
+    global chrome_driver
+    if not is_browser_alive():
+        try:
+            if chrome_driver:
+                chrome_driver.quit()
+        except:
+            pass
+        setup_chrome_driver()
 
 @app.route("/api/open-device", methods=["POST"])
 def open_device():
+    """Open device in new tab and handle login if needed"""
+    global chrome_driver
+    
+    # Get device info
+    data = request.get_json()
+    ip = data.get("ip")
+    devices = load_devices()
+    device = next((d for d in devices if d["ip"] == ip), None)
+    
+    if not device:
+        return jsonify({"error": "Device not found"}), 404
+        
+    # Make sure we have a working browser
     try:
-        data = request.get_json()
-        ip = data.get("ip")
-        username = data.get("username")
-        password = data.get("password")
-
-        # Setup Firefox with optimized options
-        firefox_options = FirefoxOptions()
-        firefox_options.add_argument("--no-sandbox")
-        firefox_options.set_preference("detach", True)
-        firefox_options.set_preference("dom.webdriver.enabled", False)
-        firefox_options.set_preference("useAutomationExtension", False)
-        firefox_options.set_preference("network.http.pipelining", True)
-        firefox_options.set_preference("network.http.proxy.pipelining", True)
-        firefox_options.set_preference("network.http.max-connections", 256)
-        firefox_options.set_preference("browser.cache.disk.enable", False)
-        firefox_options.set_preference("browser.cache.memory.enable", False)
+        ensure_browser()
         
-        driver = webdriver.Firefox(options=firefox_options)
-        driver.set_page_load_timeout(10)
+        # Open URL in new tab
+        chrome_driver.execute_script(f"window.open('http://{ip}', '_blank');")
         
-        # Execute login script directly
-        login_script = f"""
-            document.getElementsByName('user[name]')[0].value = '{username}';
-            document.getElementsByName('user[password]')[0].value = '{password}';
-            document.querySelector("button[type='submit']").click();
-        """
+        # Switch to newly opened tab
+        chrome_driver.switch_to.window(chrome_driver.window_handles[-1])
         
-        # Navigate and execute script
-        login_url = f"http://{ip}/sdcard/cpt/app/signin.php"
-        driver.get(login_url)
-        driver.execute_script(login_script)
+        # Wait for page load with timeout
+        wait = WebDriverWait(chrome_driver, 15)
+        wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         
-        # Wait for redirect with shorter timeout
-        WebDriverWait(driver, 5).until(
-            lambda x: "/graphic.php" in x.current_url
-        )
+        # Check if login needed and handle it
+        if "signin.php" in chrome_driver.current_url:
+            handle_login(DEVICE_USERNAME, DEVICE_PASSWORD)
+            # Wait for login to complete
+            wait.until(lambda d: "signin.php" not in d.current_url)
+            
+        return jsonify({"success": True})
         
-        final_url = driver.current_url
-        cookies = driver.get_cookies()
-        
-        return jsonify({
-            "success": True,
-            "url": final_url,
-            "cookies": cookies
-        })
-
     except Exception as e:
-        if driver:
-            try:
-                driver.quit()
-            except:
-                pass
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-@app.route("/api/close-device", methods=["POST"])
-def close_device():
-    try:
-        data = request.get_json()
-        session_id = data.get("sessionId")
+        # If anything fails, reset browser and try one more time
+        try:
+            chrome_driver.quit()
+        except:
+            pass
+        chrome_driver = None
         
-        if session_id in device_sessions:
-            driver = device_sessions[session_id]['driver']
-            try:
-                driver.quit()
-            except:
-                pass
-            finally:
-                del device_sessions[session_id]
+        # One retry attempt
+        try:
+            ensure_browser()
+            chrome_driver.execute_script(f"window.open('http://{ip}', '_blank');")
+            chrome_driver.switch_to.window(chrome_driver.window_handles[-1])
+            wait = WebDriverWait(chrome_driver, 15)
+            wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            
+            if "signin.php" in chrome_driver.current_url:
+                handle_login(DEVICE_USERNAME, DEVICE_PASSWORD)
+                wait.until(lambda d: "signin.php" not in d.current_url)
+                
             return jsonify({"success": True})
             
-        return jsonify({"success": False, "error": "Session not found"}), 404
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/api/hash", methods=["POST"])
-def compute_hash():
-    try:
-        data = request.get_json()
-        password = data['password']
-        token1 = data['token1']
-        token2 = data['token2']
-        
-        # Generate hash using the same algorithm as the device
-        hash1 = sha256(password + token1)
-        final_hash = sha256(hash1 + token2)
-        
-        return jsonify({"hash": final_hash})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        except Exception as retry_error:
+            return jsonify({"error": "Failed to open device after retry"}), 500

@@ -1,37 +1,21 @@
 import json
 import os
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "users.json")
+def get_devices():
+    """Load devices from JSON file in standard locations"""
+    possible_paths = [
+        "/Users/Shared/devices.json",
+        "C:/ProgramData/devices.json",
+    ]
+    
+    for path in possible_paths:
+        try:
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                    return data.get("devices", [])
+        except Exception as e:
+            continue
+    
 
-
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        return {"users": []}
-
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
-
-
-def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-def get_devices_for_user(username):
-    data = load_data()
-    for user in data["users"]:
-        if user["username"] == username:
-            return user.get("devices", [])
     return []
-
-
-def add_device_to_user(username, device):
-    data = load_data()
-    for user in data["users"]:
-        if user["username"] == username:
-            if "devices" not in user:
-                user["devices"] = []
-            user["devices"].append(device)
-            save_data(data)
-            return True
-    return False

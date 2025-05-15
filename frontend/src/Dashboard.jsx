@@ -1,51 +1,61 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 // Language specific content
 const content = {
   en: {
     title: "Device Dashboard",
     ipAddress: "IP Address",
+    deviceName: "Device Name",
+    error: "Error loading devices"
   },
   fr: {
     title: "Tableau de Bord",
     ipAddress: "Adresse IP",
+    deviceName: "Nom de l'appareil",
+    error: "Erreur lors du chargement des appareils"
   }
 };
 
-export default function Dashboard({ user, lang }) {
+
+export default function Dashboard({ lang }) {
   const [devices, setDevices] = useState([]);
-  const navigate = useNavigate();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate(`/${lang}/login`);
-      return;
-    }
+    const fetchDevices = async () => {
+      try {
+        const response = await fetch("/api/devices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setDevices(data.devices);
+      } catch (err) {
+        console.error("Error fetching devices:", err);
+        setError(content[lang].error);
+      }
+    };
 
-    fetch("/api/devices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user }),
-    })
-      .then((res) => res.json())
-      .then((data) => setDevices(data.devices || []))
-      .catch((err) => console.error("Error fetching devices:", err));
-  }, [user, lang]);
+    fetchDevices();
+  }, [lang]);
 
   const handleOpenDevice = async (e, device) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/open-device", {
+      await fetch("/api/open-device", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ip: device.ip,
-          username: device.user,
-          password: device.pass,
+          ip: device.ip
         }),
       });
-      // ... rest of your handleOpenDevice logic
     } catch (err) {
       console.error("Error:", err);
     }
@@ -66,6 +76,9 @@ export default function Dashboard({ user, lang }) {
           style={styles.logo}
         />
         <h2 style={styles.heading}>{content[lang].title}</h2>
+
+        {error && <div style={styles.error}>{error}</div>}
+
         <div style={styles.grid}>
           {devices.map((d, i) => (
             <div key={i} style={styles.card} onClick={(e) => handleOpenDevice(e, d)}>
@@ -127,6 +140,40 @@ const styles = {
     color: "#1a1a1a",
     marginBottom: "40px",
     textAlign: "left",
+  },
+  addButton: {
+    padding: "10px 20px",
+    backgroundColor: "#007bff",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    fontWeight: "500",
+    cursor: "pointer",
+    marginBottom: "20px",
+  },
+  addForm: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    marginBottom: "24px",
+  },
+  input: {
+    padding: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+    fontSize: "16px",
+    width: "100%",
+  },
+  button: {
+    padding: "10px 20px",
+    backgroundColor: "#28a745",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    fontWeight: "500",
+    cursor: "pointer",
   },
   grid: {
     display: "grid",
@@ -190,4 +237,13 @@ const styles = {
     color: "#333",
     fontWeight: "500",
   },
+  error: {
+    color: '#dc3545',
+    padding: '10px',
+    marginBottom: '20px',
+    borderRadius: '4px',
+    backgroundColor: '#f8d7da',
+    borderColor: '#f5c6cb',
+    textAlign: 'center'
+  }
 };
