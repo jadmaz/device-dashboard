@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from './config';
 
 // Language specific content
 const content = {
@@ -25,7 +26,7 @@ export default function Dashboard({ lang }) {
   useEffect(() => {
     const fetchDevices = async () => {
       try {
-        const response = await fetch("/api/devices", {
+        const response = await fetch(`${API_BASE_URL}/api/devices`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({})
@@ -49,7 +50,7 @@ export default function Dashboard({ lang }) {
   const handleOpenDevice = async (e, device) => {
     e.preventDefault();
     try {
-      await fetch("/api/open-device", {
+      await fetch(`${API_BASE_URL}/api/open-device`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

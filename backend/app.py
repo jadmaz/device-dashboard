@@ -7,24 +7,22 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import WebDriverException
 from dotenv import load_dotenv
 import os
+import atexit
 
 app = Flask(__name__)
 CORS(app)
 chrome_driver = None
 
-# Load environment variables
 load_dotenv()
 
-# Get credentials from environment
 DEVICE_USERNAME = os.getenv('DEVICE_USERNAME')
 DEVICE_PASSWORD = os.getenv('DEVICE_PASSWORD')
 
 @app.route("/api/devices", methods=["POST"])
-def get_devices_route():  # Changed function name
-    devices = load_devices()  # Using the imported function
+def get_devices_route():
+    devices = load_devices()
     return jsonify({"devices": devices})
 
 def setup_chrome_driver():
@@ -81,7 +79,6 @@ def open_device():
     """Open device in new tab and handle login if needed"""
     global chrome_driver
     
-    # Get device info
     data = request.get_json()
     ip = data.get("ip")
     devices = load_devices()
@@ -90,11 +87,9 @@ def open_device():
     if not device:
         return jsonify({"error": "Device not found"}), 404
         
-    try:
+    def try_open_device():
         ensure_browser()
-        
         chrome_driver.execute_script(f"window.open('http://{ip}', '_blank');")
-        
         chrome_driver.switch_to.window(chrome_driver.window_handles[-1])
         
         wait = WebDriverWait(chrome_driver, 15)
@@ -103,9 +98,10 @@ def open_device():
         if "signin.php" in chrome_driver.current_url:
             handle_login(DEVICE_USERNAME, DEVICE_PASSWORD)
             wait.until(lambda d: "signin.php" not in d.current_url)
-            
+    
+    try:
+        try_open_device()
         return jsonify({"success": True})
-        
     except Exception as e:
         try:
             chrome_driver.quit()
@@ -114,17 +110,25 @@ def open_device():
         chrome_driver = None
         
         try:
-            ensure_browser()
-            chrome_driver.execute_script(f"window.open('http://{ip}', '_blank');")
-            chrome_driver.switch_to.window(chrome_driver.window_handles[-1])
-            wait = WebDriverWait(chrome_driver, 15)
-            wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-            
-            if "signin.php" in chrome_driver.current_url:
-                handle_login(DEVICE_USERNAME, DEVICE_PASSWORD)
-                wait.until(lambda d: "signin.php" not in d.current_url)
-                
+            try_open_device()
             return jsonify({"success": True})
-            
         except Exception as retry_error:
-            return jsonify({"error": "Failed to open device after retry"}), 500
+            return jsonify({"error": f"Failed to open device after retry: {str(retry_error)}"}), 500
+
+@atexit.register
+def cleanup():
+    """Cleanup Chrome driver on application shutdown"""
+    global chrome_driver
+    if chrome_driver:
+        print("Cleaning up Chrome driver...")
+        try:
+            chrome_driver.quit()
+        except Exception as e:
+            print(f"Error cleaning up Chrome driver: {e}")
+
+if __name__ == "__main__":
+    try:
+        app.run(host='0.0.0.0', port=5001, debug=True)
+    except Exception as e:
+        if chrome_driver:
+            chrome_driver.quit()

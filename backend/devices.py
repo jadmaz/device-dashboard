@@ -3,7 +3,7 @@ import os
 
 def get_devices():
     """Load devices from JSON file"""
-    json_path = "/config/devices.json"
+    json_path = "../config/devices.json"
     
     try:
         if os.path.exists(json_path):
