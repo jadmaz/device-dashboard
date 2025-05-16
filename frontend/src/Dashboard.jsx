@@ -128,11 +128,11 @@ const styles = {
     fontFamily: "system-ui, -apple-system, sans-serif",
   },
   logo: {
-    width: '400px', // Increased from 200px
+    width: '400px',
     height: 'auto',
-    marginBottom: '40px', // Increased margin to maintain spacing
-    display: 'block', // Ensure proper centering
-    margin: '0 auto 40px', // Center horizontally and add bottom margin
+    marginBottom: '40px',
+    display: 'block',
+    margin: '0 auto 40px',
   },
   heading: {
     fontSize: "28px",

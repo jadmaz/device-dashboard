@@ -90,37 +90,29 @@ def open_device():
     if not device:
         return jsonify({"error": "Device not found"}), 404
         
-    # Make sure we have a working browser
     try:
         ensure_browser()
         
-        # Open URL in new tab
         chrome_driver.execute_script(f"window.open('http://{ip}', '_blank');")
         
-        # Switch to newly opened tab
         chrome_driver.switch_to.window(chrome_driver.window_handles[-1])
         
-        # Wait for page load with timeout
         wait = WebDriverWait(chrome_driver, 15)
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         
-        # Check if login needed and handle it
         if "signin.php" in chrome_driver.current_url:
             handle_login(DEVICE_USERNAME, DEVICE_PASSWORD)
-            # Wait for login to complete
             wait.until(lambda d: "signin.php" not in d.current_url)
             
         return jsonify({"success": True})
         
     except Exception as e:
-        # If anything fails, reset browser and try one more time
         try:
             chrome_driver.quit()
         except:
             pass
         chrome_driver = None
         
-        # One retry attempt
         try:
             ensure_browser()
             chrome_driver.execute_script(f"window.open('http://{ip}', '_blank');")

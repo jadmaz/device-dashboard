@@ -2,20 +2,14 @@ import json
 import os
 
 def get_devices():
-    """Load devices from JSON file in standard locations"""
-    possible_paths = [
-        "/Users/Shared/devices.json",
-        "C:/ProgramData/devices.json",
-    ]
+    """Load devices from JSON file"""
+    json_path = "/config/devices.json"
     
-    for path in possible_paths:
-        try:
-            if os.path.exists(path):
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                    return data.get("devices", [])
-        except Exception as e:
-            continue
-    
-
+    try:
+        if os.path.exists(json_path):
+            with open(json_path, 'r') as f:
+                data = json.load(f)
+                return data.get("devices", [])
+    except Exception as e:
+        print(f"Error loading devices: {str(e)}")
     return []
