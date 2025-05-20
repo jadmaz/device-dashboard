@@ -1,10 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: Set working directory to script location
+cd /d "%~dp0"
+
 :: Check if setup has been done
 if not exist ".venv" (
     echo Environment not set up. Please run setup.bat first
-    pause
     exit /b 1
 )
 
@@ -14,7 +16,7 @@ call .venv\Scripts\activate.bat
 :: Start backend
 echo Starting backend server...
 cd backend
-start /B python app.py
+start /B pythonw app.py
 
 :: Wait for backend to initialize
 timeout /t 2 /nobreak >nul
@@ -23,6 +25,3 @@ timeout /t 2 /nobreak >nul
 echo Starting frontend...
 cd ../frontend
 start /B npm start
-
-echo Application started! Press any key to exit...
-pause
