@@ -24,7 +24,7 @@ source .venv/bin/activate
 export FLASK_APP=backend/app.py
 export FLASK_ENV=development
 cd backend
-python3 app.py &
+nohup python3 app.py >/dev/null 2>&1 &
 
 # Wait for backend to initialize
 sleep 2
@@ -32,8 +32,7 @@ sleep 2
 # Start frontend
 echo "Starting frontend..."
 cd ../frontend
-npm install
-npm start &
+nohup npm start >/dev/null 2>&1 &
 
-# Keep script running
-wait
+# Exit immediately since we're running in background
+exit 0
