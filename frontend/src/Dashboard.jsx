@@ -7,13 +7,15 @@ const content = {
     title: "Device Dashboard",
     ipAddress: "IP Address",
     deviceName: "Device Name",
-    error: "Error loading devices"
+    error: "Error loading devices",
+    deviceUnavailable: "Device is currently unavailable"
   },
   fr: {
     title: "Tableau de Bord",
     ipAddress: "Adresse IP",
     deviceName: "Nom de l'appareil",
-    error: "Erreur lors du chargement des appareils"
+    error: "Erreur lors du chargement des appareils",
+    deviceUnavailable: "L'appareil n'est pas disponible actuellement"
   }
 };
 
@@ -48,6 +50,13 @@ export default function Dashboard({ lang }) {
 
   const handleOpenDevice = async (e, device) => {
     e.preventDefault();
+    
+    // Check if device is offline
+    if (!device.online) {
+      alert(content[lang].deviceUnavailable);
+      return;
+    }
+
     try {
       await fetch(`${API_BASE_URL}/api/open-device`, {
         method: "POST",
@@ -60,6 +69,13 @@ export default function Dashboard({ lang }) {
       console.error("Error:", err);
     }
   };
+
+  const getStatusStyle = (online) => ({
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    backgroundColor: online ? "#4CAF50" : "#dc3545"
+  });
 
   return (
     <div style={styles.page}>
@@ -84,7 +100,7 @@ export default function Dashboard({ lang }) {
             <div key={i} style={styles.card} onClick={(e) => handleOpenDevice(e, d)}>
               <div style={styles.cardHeader}>
                 <span style={styles.deviceName}>{d.name}</span>
-                <span style={styles.status}></span>
+                <span style={{...styles.status, ...getStatusStyle(d.online)}}></span>
               </div>
               <div style={styles.cardBody}>
                 <div style={styles.ipAddress}>

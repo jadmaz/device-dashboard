@@ -10,6 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 import os
 import time
+import subprocess
 
 app = Flask(__name__)
 CORS(app)
@@ -21,8 +22,20 @@ DEVICE_PASSWORD = os.getenv('DEVICE_PASSWORD')
 
 @app.route("/api/devices", methods=["POST"])
 def get_devices_route():
-    """Get list of available devices"""
+    """Get list of available devices and their ping status"""
     devices = load_devices()
+    
+    # Add ping check for each device
+    for device in devices:
+        try:
+            # Simple ping command (1 attempt)
+            response = subprocess.run(['ping', '-c', '1', '-W', '1', device['ip']], 
+                                   capture_output=True, 
+                                   timeout=1)
+            device['online'] = response.returncode == 0
+        except:
+            device['online'] = False
+            
     return jsonify({"devices": devices})
 
 def setup_chrome_driver():
