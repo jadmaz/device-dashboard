@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import platform
 
 def get_devices():
     """Load devices from JSON file"""
@@ -18,11 +19,19 @@ def get_devices():
 def ping_device(ip):
     """Ping a device and return True if reachable, False otherwise."""
     try:
-        response = subprocess.run(
-            ['ping', '-c', '1', '-W', '1', ip], 
-            capture_output=True, 
-            timeout=1
-        )
+        if platform.system().lower() == "windows":
+            response = subprocess.run(
+                ['ping', '-n', '1', '-w', '1000', ip],
+                capture_output=True,
+                timeout=2
+            )
+        else:
+            response = subprocess.run(
+                ['ping', '-c', '1', '-W', '1', ip],
+                capture_output=True,
+                timeout=2
+            )
         return response.returncode == 0
-    except:
+    except Exception as e:
+        print(f"Error pinging {ip}: {e}")
         return False

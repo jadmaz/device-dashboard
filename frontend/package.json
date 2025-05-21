@@ -15,9 +15,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start:react": "BROWSER=none react-scripts start",
+    "start:react": "set BROWSER=none&& react-scripts start",
     "trigger-selenium-dashboard": "curl -X GET http://localhost:5001/api/show-dashboard-in-selenium",
-    "start": "concurrently \"npm run start:react\" \"sh -c 'wait-on http://localhost:3000 && npm run trigger-selenium-dashboard'\"",
+    "start": "concurrently \"npm run start:react\" \"wait-on http://localhost:3000 && npm run trigger-selenium-dashboard\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
