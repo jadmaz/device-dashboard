@@ -22,15 +22,15 @@ const content = {
 
 export default function Dashboard({ lang }) {
   const [devices, setDevices] = useState([]);
+  const [deviceStatus, setDeviceStatus] = useState({});
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchDevices = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/devices`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({})
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
         });
         
         if (!response.ok) {
@@ -48,11 +48,34 @@ export default function Dashboard({ lang }) {
     fetchDevices();
   }, [lang]);
 
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/devices/status`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        setDeviceStatus(data.status);
+      } catch (err) {
+        console.error("Error checking status:", err);
+      }
+    };
+
+    checkStatus();
+
+    const interval = setInterval(checkStatus, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleOpenDevice = async (e, device) => {
     e.preventDefault();
     
-    // Check if device is offline
-    if (!device.online) {
+    if (!deviceStatus[device.ip]) {
       alert(content[lang].deviceUnavailable);
       return;
     }
@@ -70,11 +93,11 @@ export default function Dashboard({ lang }) {
     }
   };
 
-  const getStatusStyle = (online) => ({
+  const getStatusStyle = (ip) => ({
     width: "10px",
     height: "10px",
     borderRadius: "50%",
-    backgroundColor: online ? "#4CAF50" : "#dc3545"
+    backgroundColor: deviceStatus[ip] ? "#4CAF50" : "#dc3545"
   });
 
   return (
@@ -100,7 +123,7 @@ export default function Dashboard({ lang }) {
             <div key={i} style={styles.card} onClick={(e) => handleOpenDevice(e, d)}>
               <div style={styles.cardHeader}>
                 <span style={styles.deviceName}>{d.name}</span>
-                <span style={{...styles.status, ...getStatusStyle(d.online)}}></span>
+                <span style={{...styles.status, ...getStatusStyle(d.ip)}}></span>
               </div>
               <div style={styles.cardBody}>
                 <div style={styles.ipAddress}>
