@@ -1,25 +1,34 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Set working directory to script location
-cd /d "%~dp0" >nul 2>&1
+:: Change to the script's directory
+cd /d "%~dp0"
 
-:: Check if setup has been done
-if not exist ".venv" (
-    echo Environment not set up. Please run setup.bat first
-    exit /b 1
-)
+:: Kill any existing Flask processes
+echo Checking for existing Flask processes...
+for /f "tokens=5" %%a in ('tasklist /fi "imagename eq pythonw.exe" /fo list ^| findstr "PID"') do taskkill /pid %%a /f >nul 2>&1
 
 :: Activate virtual environment
-call .venv\Scripts\activate.bat >nul 2>&1
+echo Activating virtual environment...
+call .venv\Scripts\activate.bat
 
-:: Start backend in background
-cd backend >nul 2>&1
+:: Set environment variables
+echo Setting environment variables...
+set FLASK_APP=backend/app.py
+set FLASK_ENV=development
+
+:: Start backend
+echo Starting backend server...
+cd backend
 start /B pythonw app.py > backend.log 2>&1
 
 :: Wait for backend to initialize
 timeout /t 2 /nobreak >nul
 
-:: Start frontend in background
-cd ../frontend >nul 2>&1
+:: Start frontend
+echo Starting frontend...
+cd ../frontend
 start /B cmd /c "npm start > frontend.log 2>&1"
+
+:: Exit script
+exit /b 0
