@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE_URL } from './config';
+import EneriaLogo from './assets/eneria.png';
 
 const content = {
   en: {
@@ -110,7 +111,7 @@ export default function Dashboard({ lang }) {
       </Link>
       <div style={styles.container}>
         <img 
-          src="https://eneria.ca/wp-content/uploads/2021/07/ENERIA-cover-02-scaled.jpg"
+          src={EneriaLogo}
           alt="Eneria"
           style={styles.logo}
         />

@@ -20,7 +20,7 @@ set FLASK_ENV=development
 :: Start backend
 echo Starting backend server...
 cd backend
-start /B pythonw app.py > backend.log 2>&1
+start /B pythonw app.py
 
 :: Wait for backend to initialize
 timeout /t 2 /nobreak >nul
@@ -28,7 +28,7 @@ timeout /t 2 /nobreak >nul
 :: Start frontend
 echo Starting frontend...
 cd ../frontend
-start /B cmd /c "npm start > frontend.log 2>&1"
+start /B cmd /c "npm start"
 
 :: Exit script
 exit /b 0
