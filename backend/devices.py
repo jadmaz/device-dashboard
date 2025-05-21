@@ -23,7 +23,8 @@ def ping_device(ip):
             response = subprocess.run(
                 ['ping', '-n', '1', '-w', '1000', ip],
                 capture_output=True,
-                timeout=2
+                timeout=2,
+                creationflags=subprocess.CREATE_NO_WINDOW
             )
         else:
             response = subprocess.run(
