@@ -1,0 +1,37 @@
+/* filepath: /Users/jadmazzah/device-dashboard/device-dashboard/frontend/src/Dashboard.css */
+.langButton {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  padding: 8px 16px;
+  background-color: #fff;
+  border: 2px solid #1a1a1a;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  color: #1a1a1a;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.langButton:hover {
+  background-color: #f3a412;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  border: 1px solid #eee;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+}

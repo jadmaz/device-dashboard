@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE_URL } from './config';
 import EneriaLogo from './assets/eneria.png';
+import './Dashboard.css'; // Import the CSS file
 
 const content = {
   en: {
@@ -25,6 +26,8 @@ export default function Dashboard({ lang }) {
   const [devices, setDevices] = useState([]);
   const [deviceStatus, setDeviceStatus] = useState({});
   const [error, setError] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -77,7 +80,8 @@ export default function Dashboard({ lang }) {
     e.preventDefault();
     
     if (!deviceStatus[device.ip]) {
-      alert(content[lang].deviceUnavailable);
+      setPopupMessage(content[lang].deviceUnavailable);
+      setShowPopup(true);
       return;
     }
 
@@ -91,6 +95,8 @@ export default function Dashboard({ lang }) {
       });
     } catch (err) {
       console.error("Error:", err);
+      setPopupMessage("An error occurred while trying to open the device.");
+      setShowPopup(true);
     }
   };
 
@@ -103,9 +109,9 @@ export default function Dashboard({ lang }) {
 
   return (
     <div style={styles.page}>
-      <Link 
-        to={`/${lang === 'en' ? 'fr' : 'en'}/dashboard`} 
-        style={styles.langButton}
+      <Link
+        to={`/${lang === 'en' ? 'fr' : 'en'}/dashboard`}
+        className="langButton"
       >
         {lang === 'en' ? 'FR' : 'EN'}
       </Link>
@@ -121,7 +127,7 @@ export default function Dashboard({ lang }) {
 
         <div style={styles.grid}>
           {devices.map((d, i) => (
-            <div key={i} style={styles.card} onClick={(e) => handleOpenDevice(e, d)}>
+            <div key={i} className="card" onClick={(e) => handleOpenDevice(e, d)}>
               <div style={styles.cardHeader}>
                 <span style={styles.deviceName}>{d.name}</span>
                 <span style={{...styles.status, ...getStatusStyle(d.ip)}}></span>
@@ -136,6 +142,15 @@ export default function Dashboard({ lang }) {
           ))}
         </div>
       </div>
+
+      {showPopup && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popup}>
+            <p>{popupMessage}</p>
+            <button style={styles.popupButton} onClick={() => setShowPopup(false)}>OK</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -146,20 +161,6 @@ const styles = {
     minHeight: '100vh',
     width: '100%',
     backgroundColor: '#fff'
-  },
-  langButton: {
-    position: 'absolute',
-    top: '20px',
-    right: '40px',
-    padding: '8px 16px',
-    backgroundColor: '#fff',
-    border: '2px solid #1a1a1a',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    color: '#1a1a1a'
   },
   container: {
     maxWidth: "1200px",
@@ -221,19 +222,6 @@ const styles = {
     gap: "24px",
     padding: "20px 0",
   },
-  card: {
-    backgroundColor: "white",
-    borderRadius: "12px",
-    padding: "20px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    transition: "transform 0.2s, box-shadow 0.2s",
-    cursor: "pointer",
-    border: "1px solid #eee",
-    "&:hover": {
-      transform: "translateY(-2px)",
-      boxShadow: "0 8px 12px rgba(0, 0, 0, 0.1)",
-    },
-  },
   cardHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -285,5 +273,36 @@ const styles = {
     backgroundColor: '#f8d7da',
     borderColor: '#f5c6cb',
     textAlign: 'center'
+  },
+  popupOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  popup: {
+    backgroundColor: '#fff',
+    padding: '25px',
+    borderRadius: '8px',
+    boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)',
+    textAlign: 'center',
+    minWidth: '300px',
+    maxWidth: '90%',
+  },
+  popupButton: {
+    backgroundColor: '#f3a412',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '4px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    marginTop: '15px',
   }
 };
