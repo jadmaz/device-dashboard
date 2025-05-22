@@ -7,7 +7,7 @@ Une interface web pour gérer et accéder aux appareils réseau via un navigateu
 
 - Python 3.9+ | Python 3.9 ou supérieur
 - Node.js 16+ | Node.js 16 ou supérieur
-- Google Chrome browser | Navigateur Google Chrome
+- Firefox browser | Navigateur Firefox
 - Network access to devices | Accès réseau aux appareils
 
 ## Installation

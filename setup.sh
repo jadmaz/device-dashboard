@@ -28,12 +28,12 @@ else
     echo "Node.js already installed"
 fi
 
-# Install Chrome if not present
-if ! [ -d "/Applications/Google Chrome.app" ]; then
-    echo "Installing Chrome..."
-    brew install --cask google-chrome
+# Install Firefox if not present
+if ! [ -d "/Applications/Firefox.app" ]; then
+    echo "Installing Firefox..."
+    brew install --cask firefox
 else
-    echo "Chrome already installed"
+    echo "Firefox already installed"
 fi
 
 # Create Python virtual environment

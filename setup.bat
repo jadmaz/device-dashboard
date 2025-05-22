@@ -21,11 +21,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Check for Chrome
-reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe" >nul 2>&1
+:: Check for Firefox
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe" >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Chrome not found. Please install Chrome from https://www.google.com/chrome/
-    start https://www.google.com/chrome/
+    echo Firefox not found. Please install Firefox from https://www.mozilla.org/firefox/
+    start https://www.mozilla.org/firefox/
     pause
     exit /b 1
 )
