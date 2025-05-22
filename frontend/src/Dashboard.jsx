@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE_URL } from './config';
 import EneriaLogo from './assets/eneria.png';
-import './Dashboard.css'; // Import the CSS file
+import './Dashboard.css';
 
 const content = {
   en: {
