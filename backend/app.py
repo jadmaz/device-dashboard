@@ -4,6 +4,7 @@ from devices import get_devices, ping_device
 from browserManager import BrowserManager
 from dotenv import load_dotenv
 import os
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -25,6 +26,14 @@ def open_device():
     """Open device in new tab and handle login if needed."""
     data = request.get_json()
     ip = data.get("ip")
+    ip_pattern = re.compile(
+        r"^(?:10(?:\.(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}|"
+        r"172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){2}|"
+        r"192\.168(?:\.(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){2})$"
+    )
+    if not ip or not ip_pattern.match(ip):
+        return jsonify({"error": "Invalid or non-allowed IP address format"}), 400
+
     devices = get_devices()
     device = next((d for d in devices if d["ip"] == ip), None)
     
@@ -35,7 +44,8 @@ def open_device():
         browser_manager.open_device(ip, DEVICE_USERNAME, DEVICE_PASSWORD)
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error opening device {ip}: {str(e)}")
+        return jsonify({"error": "An internal error occurred while trying to open the device."}), 500
 
 @app.route("/api/show-dashboard-in-selenium", methods=["GET"])
 def show_dashboard_in_selenium_route():
@@ -45,7 +55,8 @@ def show_dashboard_in_selenium_route():
         browser_manager.navigate_to(frontend_dashboard_url)
         return jsonify({"success": True, "message": f"Selenium browser is now attempting to display: {frontend_dashboard_url}"})
     except Exception as e:
-        return jsonify({"error": f"Failed to navigate Selenium to dashboard: {str(e)}"}), 500
+        app.logger.error(f"Error navigating Selenium to dashboard: {str(e)}")
+        return jsonify({"error": "An internal error occurred while navigating to the dashboard."}), 500
 
 @app.route("/api/devices/status", methods=["GET"])
 def get_devices_status():
@@ -55,8 +66,8 @@ def get_devices_status():
         status = {device['ip']: ping_device(device['ip']) for device in devices}
         return jsonify({"status": status})
     except Exception as e:
-        print(f"Error checking status: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error checking device statuses: {str(e)}")
+        return jsonify({"error": "An internal error occurred while checking device status."}), 500
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1', port=5001, debug=False)
