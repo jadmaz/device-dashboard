@@ -46,25 +46,27 @@ cd frontend
 npm install || { echo "Failed to install Node.js dependencies"; exit 1; }
 cd ..
 
-# Create or check .env file
-echo "Checking for .env file..."
-if [ -f ".env" ]; then
-    echo ".env file already exists. Skipping creation of default .env file."
-    echo "Please ensure your existing .env file has DEVICE_USERNAME and DEVICE_PASSWORD."
-else
+# Create .env file if it doesn't exist
+if [ ! -f ".env" ]; then
     echo "Creating default .env file..."
     cat > .env <<EOL
 DEVICE_USERNAME=admin
 DEVICE_PASSWORD=password
 EOL
-    # Verify creation
-    if [ -f ".env" ]; then
-        echo ".env file created successfully."
-        echo "Please update the .env file with your credentials."
+    echo "Please update the .env file with your credentials."
+fi
+
+# Make start.sh executable
+if [ -f "./start.sh" ]; then
+    echo "Making start.sh executable..."
+    chmod +x ./start.sh
+    if [ $? -eq 0 ]; then
+        echo "start.sh is now executable."
     else
-        echo "ERROR: Failed to create .env file. Please check directory permissions or other errors."
-        exit 1 # Exit if creation failed
+        echo "Warning: Failed to make start.sh executable. Please check permissions."
     fi
+else
+    echo "Warning: start.sh not found. Cannot make it executable."
 fi
 
 echo "Setup complete! You can now run start.sh or npm start and python app.py as needed."
