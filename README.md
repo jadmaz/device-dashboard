@@ -71,7 +71,3 @@ DEVICE_PASSWORD=your_password
 - Backend: Flask API (port 5001)
 - Frontend: React (port 3000)
 - Chrome automation | Automatisation: Selenium WebDriver
-
-## Common issues | Problèmes courants:
-- Chrome not starting | Chrome ne démarre pas → Check installation
-- Login fails | Échec connexion → Check `.env` credentials
