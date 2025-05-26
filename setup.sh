@@ -46,14 +46,25 @@ cd frontend
 npm install || { echo "Failed to install Node.js dependencies"; exit 1; }
 cd ..
 
-# Create .env file if it doesn't exist
-if [ ! -f ".env" ]; then
+# Create or check .env file
+echo "Checking for .env file..."
+if [ -f ".env" ]; then
+    echo ".env file already exists. Skipping creation of default .env file."
+    echo "Please ensure your existing .env file has DEVICE_USERNAME and DEVICE_PASSWORD."
+else
     echo "Creating default .env file..."
     cat > .env <<EOL
 DEVICE_USERNAME=admin
 DEVICE_PASSWORD=password
 EOL
-    echo "Please update the .env file with your credentials."
+    # Verify creation
+    if [ -f ".env" ]; then
+        echo ".env file created successfully."
+        echo "Please update the .env file with your credentials."
+    else
+        echo "ERROR: Failed to create .env file. Please check directory permissions or other errors."
+        exit 1 # Exit if creation failed
+    fi
 fi
 
 echo "Setup complete! You can now run start.sh or npm start and python app.py as needed."
