@@ -70,4 +70,4 @@ DEVICE_PASSWORD=your_password
 
 - Backend: Flask API (port 5001)
 - Frontend: React (port 3000)
-- Chrome automation | Automatisation: Selenium WebDriver
+- Firefox automation | Automatisation: Selenium WebDriver
