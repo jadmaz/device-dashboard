@@ -1,8 +1,8 @@
 import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -13,18 +13,19 @@ class BrowserManager:
         self.timeout = timeout
         self.logger = logging.getLogger(__name__)
 
-    def get_firefox_options(self):
-        """Return configured Firefox options."""
-        firefox_options = FirefoxOptions()
-        firefox_options.set_preference("dom.webdriver.enabled", False)
-        firefox_options.set_preference("useAutomationExtension", False)
-        return firefox_options
+    def get_chrome_options(self):
+        """Return configured Chrome options."""
+        chrome_options = ChromeOptions()
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        return chrome_options
 
     def setup_driver(self):
-        """Initialize or reset Firefox WebDriver with required options."""
-        firefox_service = FirefoxService()
-        firefox_options = self.get_firefox_options()
-        self.driver = webdriver.Firefox(service=firefox_service, options=firefox_options)
+        """Initialize or reset Chrome WebDriver with required options."""
+        chrome_service = ChromeService()
+        chrome_options = self.get_chrome_options()
+        self.driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
 
     def is_alive(self):
         """Check if the browser is still responsive."""

@@ -1,38 +1,45 @@
 #!/bin/bash
 
-# Function to cleanup processes
-cleanup() {
-    echo "Cleaning up processes..."
-    pkill -f "python3.*app.py"
-    exit 0
-}
 
-# Clean up on script exit
-trap cleanup EXIT
-trap cleanup INT TERM
+echo "Starting Device Dashboard..."
 
-# Change to project directory
-cd "$(dirname "$0")"
 
-# Kill any existing Flask processes
-echo "Checking for existing Flask processes..."
-pkill -f "python3.*app.py"
+# Activate Python virtual environment
+if [ -d ".venv" ]; then
+   source .venv/bin/activate
+   echo "Virtual environment activated."
+else
+   echo "Error: .venv not found. Please run the setup script first."
+   exit 1
+fi
 
-# Start backend
-echo "Starting backend server..."
-source .venv/bin/activate
-export FLASK_APP=backend/app.py
-export FLASK_ENV=development
-cd backend
-nohup python3 app.py >/dev/null 2>&1 &
 
-# Wait for backend to initialize
-sleep 2
+# Start backend (Flask API)
+echo "Starting backend (Flask API)..."
+python backend/app.py &
+BACKEND_PID=$!
 
-# Start frontend
-echo "Starting frontend..."
-cd ../frontend
-nohup npm start >/dev/null 2>&1 &
 
-# Exit immediately since we're running in background
-exit 0
+# Start frontend (React app)
+if [ -f "frontend/package.json" ]; then
+   echo "Starting frontend (React app)..."
+   cd frontend
+   npm start &
+   FRONTEND_PID=$!
+   cd ..
+else
+   echo "Warning: frontend/package.json not found. Skipping frontend."
+fi
+
+
+# Wait for both processes
+echo ""
+echo "Both backend and frontend are running. Press Ctrl+C to stop."
+
+
+# Trap Ctrl+C to stop both
+trap "echo 'Stopping...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" SIGINT
+
+
+# Wait indefinitely
+wait
