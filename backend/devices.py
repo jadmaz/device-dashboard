@@ -5,7 +5,9 @@ import platform
 
 def get_devices():
     """Load devices from JSON file"""
-    json_path = "../config/devices.json"
+    current_script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root_dir = os.path.dirname(current_script_dir)
+    json_path = os.path.join(project_root_dir, "config", "devices.json")
     
     try:
         if os.path.exists(json_path):
